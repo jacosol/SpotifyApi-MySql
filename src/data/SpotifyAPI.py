@@ -10,6 +10,8 @@ import pandas as pd
 from spotipy.oauth2 import SpotifyClientCredentials
 import mysql
 
+from DatabaseManger import DataBaseManager
+
 
 class SpotifyAPI(object):
     """This class can download data from Spotify API.
@@ -43,11 +45,31 @@ class SpotifyAPI(object):
             response['artist_spotify_link'].extend([[i['artists'][j]['href'] for j in range(len(i['artists']))]
                                                     for i in r['albums']['items']])
 
+
+        db = DataBaseManager(logging_level=1)
+
+        db.drop_table('Albums')
+        TABLES = {}
+        TABLES['Albums'] = ('create table Albums '
+                            '(album_id CHAR(22) PRIMARY KEY,'
+                            'name VARCHAR(200), '
+                            'total_tracks INT,'
+                            'album_type VARCHAR(10),'
+                            'release_date DATE);')
+        db.cnx.commit()
+
+        db.create_tables(TABLES)
+
+        r = {key: value for key, value in response.items() if key in ['album_id', 'name', 'total_tracks', 'album_type', 'release_date']}
+
+        db.insert_values_from_dict('Albums', r)
+        db.cnx.commit()
+
         responsedf = pd.DataFrame(response)
         responsedf['total_tracks'] = responsedf['total_tracks'].astype(int)
         responsedf = responsedf.drop_duplicates(subset=['album_id'])
         print(os.environ.get('IDE_PROJECT_ROOTS'))
-        responsedf.to_csv('../../data/trial.csv')
+        responsedf.to_csv('../../resources/data/trial.csv')
         # print(json.dumps(response, indent=1)) # prints nicely a dict
         print(responsedf['album_id'])
 

@@ -12,6 +12,6 @@ import SpotifyAPI
 sp = SpotifyAPI.SpotifyAPI()
 
 # sp.get_featured_new_releases()
-sp.get_newly_released_albums(max_number_of_albums=200)
+sp.get_newly_released_albums(max_number_of_albums=50)
 # sp.artist_genre('k-pop')
 

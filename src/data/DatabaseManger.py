@@ -132,7 +132,7 @@ class DataBaseManager():
         :return: list, containing all column names from table
         """
         self.cursor.execute(f"SHOW columns FROM {table}")
-        return [column[0] for column in db.cursor.fetchall()]
+        return [column[0] for column in self.cursor.fetchall()]
 
     def insert_values_from_dict(self, table, d):
         """
@@ -145,9 +145,8 @@ class DataBaseManager():
         if '(' not in columns:  # handles the case of single element
             columns = '(' + columns + ')'
         values = pd.DataFrame(d).values
+        print([type(v) for v in values[0]])
         values_types = self.create_tuple_of_placeholders(values[0])
-
-        values = self.remove_chars_from_string(str([str(v).replace('[', '(').replace(']', ')')  for v in values])[:-1], ['[', ']', '"'])
 
         if len(values_types) == 1:
             values_types = self.remove_chars_from_string(
@@ -158,7 +157,7 @@ class DataBaseManager():
         self.query = 'INSERT INTO ' + table + ' ' + str(columns)  + ' VALUES ' + values_types
         print(self.query)
         print([tuple(v) for v in pd.DataFrame(d).values])
-        self.cursor.execute(self.query, [tuple(v) for v in pd.DataFrame(d).values])
+        self.cursor.executemany(self.query, [tuple(v) for v in pd.DataFrame(d).values])
 
     def select(self, columns):
         self.query = 'SELECT ' + self.remove_chars_from_string(str(columns), ['\'', '\"'])
@@ -210,41 +209,4 @@ class DataBaseManager():
         print([type(v) for v in v2])
         return v2
 
-#
-db = DataBaseManager(logging_level=1)
 
-db.drop_table('Albums')
-TABLES = {}
-TABLES['Albums'] = ('create table Albums '
-                    '(album_id CHAR(22) PRIMARY KEY,'
-                    'name VARCHAR(200), '
-                    'total_tracks INT,'
-                    'album_type VARCHAR(10),'
-                    'release_date DATE);')
-db.cnx.commit()
-
-db.create_tables(TABLES)
-# db.insert_values_from_dict('Albums', {'name': ['a', 'b'], 'total_tracks': [1,2]})
-
-
-do = 1
-if do:
-
-    db.select('*') \
-        .fromm('Albums') \
-        .where(condition='release_date = %s', args=(datetime.date(2020,10,22),)) \
-        .run_query()
-
-    db.drop_table('Albums')
-    TABLES = {}
-    TABLES['Albums'] = ('create table Albums '
-                        '(album_id CHAR(22) PRIMARY KEY,'
-                        'name VARCHAR(200), '
-                        'total_tracks INT,'
-                        'album_type VARCHAR(10),'
-                        'release_date DATE);')
-    db.cnx.commit()
-
-    db.create_tables(TABLES)
-    db.insert_values_from_file(table='Albums', filepath='../../resources/data/trial.csv', primary_key='album_id')
-    db.cnx.commit()
