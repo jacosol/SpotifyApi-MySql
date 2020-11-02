@@ -35,7 +35,7 @@ class SpotifyAPI(object):
             response['release_date'].extend([i['release_date'] for i in r['albums']['items']])
             response['album_type'].extend([i['type'] for i in r['albums']['items']])
             response['album_id'].extend([i['id'] for i in r['albums']['items']])
-            response['total_tracks'].extend([i['total_tracks'] for i in r['albums']['items']])
+            response['total_tracks'].extend([int(i['total_tracks']) for i in r['albums']['items']])
             response['artist'].extend([[i['artists'][j]['name']
                                         for j in range(len(i['artists']))] for i in r['albums']['items']])
             response['artist_spotify_id'].extend([[i['artists'][j]['id'] for j in range(len(i['artists']))]
@@ -44,6 +44,7 @@ class SpotifyAPI(object):
                                                     for i in r['albums']['items']])
 
         responsedf = pd.DataFrame(response)
+        responsedf['total_tracks'] = responsedf['total_tracks'].astype(int)
         responsedf = responsedf.drop_duplicates(subset=['album_id'])
         print(os.environ.get('IDE_PROJECT_ROOTS'))
         responsedf.to_csv('../../data/trial.csv')

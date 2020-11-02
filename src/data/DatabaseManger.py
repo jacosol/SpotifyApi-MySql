@@ -9,6 +9,7 @@ from mysql.connector import errorcode
 from mysql.connector.errors import ProgrammingError
 import pandas as pd
 import os
+import numpy as np
 
 
 class DataBaseManager():
@@ -79,6 +80,7 @@ class DataBaseManager():
         :param columns: tuple, tuple of strings corresponding to the columns to insert data in
         :param values: tuple, tuple of mixed types containing the values to add
         """
+        values = self.input_check_for_values(values)
         if self.logging_level > 0:
             print(f'Values: {values}')
             print(f'Columns: {columns}')
@@ -86,7 +88,7 @@ class DataBaseManager():
         if '(' not in columns:  # handles the case of single element
             columns = '(' + columns + ')'
 
-        values_types = self.create_tuple_of_values_types(values)
+        values_types = self.create_tuple_of_placeholders(values)
         if len(values_types) == 1:
             values_types = self.remove_chars_from_string(
                 str(values_types), to_remove=[',', '\''])  # removing trailing comma
@@ -132,6 +134,32 @@ class DataBaseManager():
         self.cursor.execute(f"SHOW columns FROM {table}")
         return [column[0] for column in db.cursor.fetchall()]
 
+    def insert_values_from_dict(self, table, d):
+        """
+        This method inserts values from the dictionary.
+        The keys are the columns to insert and the values is the list of values to insert.
+        :param d: dict
+        """
+        columns = tuple(d.keys())
+        columns = self.remove_chars_from_string(str(columns), '\'')  # removing string apostrophe
+        if '(' not in columns:  # handles the case of single element
+            columns = '(' + columns + ')'
+        values = pd.DataFrame(d).values
+        values_types = self.create_tuple_of_placeholders(values[0])
+
+        values = self.remove_chars_from_string(str([str(v).replace('[', '(').replace(']', ')')  for v in values])[:-1], ['[', ']', '"'])
+
+        if len(values_types) == 1:
+            values_types = self.remove_chars_from_string(
+                str(values_types), to_remove=[',', '\''])  # removing trailing comma
+        else:
+            values_types = self.remove_chars_from_string(str(values_types), to_remove='\'')
+
+        self.query = 'INSERT INTO ' + table + ' ' + str(columns)  + ' VALUES ' + values_types
+        print(self.query)
+        print([tuple(v) for v in pd.DataFrame(d).values])
+        self.cursor.execute(self.query, [tuple(v) for v in pd.DataFrame(d).values])
+
     def select(self, columns):
         self.query = 'SELECT ' + self.remove_chars_from_string(str(columns), ['\'', '\"'])
         return self
@@ -154,14 +182,14 @@ class DataBaseManager():
                 print(col)
 
     @staticmethod
-    def create_tuple_of_values_types(values):
+    def create_tuple_of_placeholders(values):
         """
         This function matches each object type in values to the key of the type_dict
         :param values: list, list of objects.
         :return: tuple, containing the identifiers for each type to insert.
         """
-        type_dict = {str: "%s", int: "%d", float: "%f"}
-        return tuple(type_dict[type(val)] for val in values)
+        # return tuple(type_dict[type(val)] for val in values)
+        return tuple("%s" for val in values)
 
     @staticmethod
     def remove_chars_from_string(s, to_remove):
@@ -171,26 +199,52 @@ class DataBaseManager():
             s = s.replace(character, '')
         return s
 
+    def input_check_for_values(self, values):
+        print(values)
+        v2 = []
+        for v in values:
+            try:
+                v2.append(int(v))
+            except:
+                v2.append(v)
+        print([type(v) for v in v2])
+        return v2
+
+#
+db = DataBaseManager(logging_level=1)
+
+db.drop_table('Albums')
+TABLES = {}
+TABLES['Albums'] = ('create table Albums '
+                    '(album_id CHAR(22) PRIMARY KEY,'
+                    'name VARCHAR(200), '
+                    'total_tracks INT,'
+                    'album_type VARCHAR(10),'
+                    'release_date DATE);')
+db.cnx.commit()
+
+db.create_tables(TABLES)
+# db.insert_values_from_dict('Albums', {'name': ['a', 'b'], 'total_tracks': [1,2]})
 
 
-db = DataBaseManager()
+do = 1
+if do:
 
-db.select('*')\
-    .fromm('Albums')\
-    .where(condition='release_date = %s', args=(datetime.date(2020,10,22),))\
-    .run_query()
+    db.select('*') \
+        .fromm('Albums') \
+        .where(condition='release_date = %s', args=(datetime.date(2020,10,22),)) \
+        .run_query()
 
-if 1:
     db.drop_table('Albums')
     TABLES = {}
     TABLES['Albums'] = ('create table Albums '
                         '(album_id CHAR(22) PRIMARY KEY,'
                         'name VARCHAR(200), '
-                        'total_track INT,'
+                        'total_tracks INT,'
                         'album_type VARCHAR(10),'
                         'release_date DATE);')
     db.cnx.commit()
 
     db.create_tables(TABLES)
-    db.insert_values_from_file(table='Albums', filepath='../../data/trial.csv', primary_key='album_id')
+    db.insert_values_from_file(table='Albums', filepath='../../resources/data/trial.csv', primary_key='album_id')
     db.cnx.commit()
