@@ -7,11 +7,13 @@
 This script will create the needed object to obtain the raw data (samples and category) via the Splice API
 """
 
-import SpotifyAPI
+from SpotifyAPI import SpotifyAPI
 
-sp = SpotifyAPI.SpotifyAPI()
+sp = SpotifyAPI()
+
+# sp.get_tracks_from_album()
 
 # sp.get_featured_new_releases()
-sp.get_newly_released_albums(max_number_of_albums=50)
+# sp.get_newly_released_albums(max_number_of_albums=50)
 # sp.artist_genre('k-pop')
 

@@ -28,14 +28,16 @@ class SpotifyAPI(object):
     def list_all_genres(self):
         pass
 
-    def get_newly_released_albums(self, max_number_of_albums=20000, limit=10):
+    def get_newly_released_albums(self, max_number_of_albums=20000, limit=10, initial_offset=0, filename='../../resources/data/trial.csv'):
         response = {'name':[], 'artist':[], 'artist_spotify_link':[], 'artist_spotify_id':[],
                     'release_date':[], 'album_id':[], 'album_type':[], 'total_tracks':[]}
         for offset in range(0, max_number_of_albums, limit):
+            offset += initial_offset
             r = self.sp.search(q='tag:new', type='album', offset=offset, limit=limit)
+            print(json.dumps(r, indent=1)) # prints nicely a dict
             response['name'].extend([i['name'] for i in r['albums']['items']])
             response['release_date'].extend([i['release_date'] for i in r['albums']['items']])
-            response['album_type'].extend([i['type'] for i in r['albums']['items']])
+            response['album_type'].extend([i['album_type'] for i in r['albums']['items']])
             response['album_id'].extend([i['id'] for i in r['albums']['items']])
             response['total_tracks'].extend([int(i['total_tracks']) for i in r['albums']['items']])
             response['artist'].extend([[i['artists'][j]['name']
@@ -45,34 +47,20 @@ class SpotifyAPI(object):
             response['artist_spotify_link'].extend([[i['artists'][j]['href'] for j in range(len(i['artists']))]
                                                     for i in r['albums']['items']])
 
-
-        db = DataBaseManager(logging_level=1)
-
-        db.drop_table('Albums')
-        TABLES = {}
-        TABLES['Albums'] = ('create table Albums '
-                            '(album_id CHAR(22) PRIMARY KEY,'
-                            'name VARCHAR(200), '
-                            'total_tracks INT,'
-                            'album_type VARCHAR(10),'
-                            'release_date DATE);')
-        db.cnx.commit()
-
-        db.create_tables(TABLES)
-
-        r = {key: value for key, value in response.items() if key in ['album_id', 'name', 'total_tracks', 'album_type', 'release_date']}
-
-        db.insert_values_from_dict('Albums', r)
-        db.cnx.commit()
-
-        responsedf = pd.DataFrame(response)
-        responsedf['total_tracks'] = responsedf['total_tracks'].astype(int)
-        responsedf = responsedf.drop_duplicates(subset=['album_id'])
-        print(os.environ.get('IDE_PROJECT_ROOTS'))
-        responsedf.to_csv('../../resources/data/trial.csv')
+        self.save_response(response=response, filename=filename)
         # print(json.dumps(response, indent=1)) # prints nicely a dict
-        print(responsedf['album_id'])
+        return response
 
+    def get_tracks_from_album(self, album_id='6M4Nu5UgX097dxeF2lm9P8'):
+
+        r = self.sp.album_tracks(album_id)
+        i=0
+
+
+    def save_response(self, response, filename):
+        responsedf = pd.DataFrame(response)
+        responsedf = responsedf.drop_duplicates(subset=['album_id'])
+        responsedf.to_csv(filename)
 
     def get_featured_new_releases(self):
         for j in range(4):
@@ -88,6 +76,10 @@ class SpotifyAPI(object):
                 else:
                     response = None
 
+
+    #####################################################################################
+    #####################################################################################
+    #####################################################################################
     def artist_genre(self, genre):
         """Download all artists info from a genre """
 
@@ -214,6 +206,9 @@ class SpotifyAPI(object):
                     self.audio_feature(artist[:-17])
                 except Exception as e:
                     print("Artist {} has something wrong:{}".format(artist,e))
+
+
+
 
 def update_data(genre='k-pop'):
     spf=SpotifyAPI(genre)

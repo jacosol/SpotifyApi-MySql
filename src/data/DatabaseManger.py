@@ -9,10 +9,12 @@ from mysql.connector.errors import ProgrammingError
 import pandas as pd
 import os
 
+
 class DataBaseManager():
     """
     This class can handle all the operations on a database.
     """
+
     def __init__(self, db_name='myspotify', logging_level=0):
         self.DB_NAME = db_name
         print(f'Connecting to {self.DB_NAME} database..')
@@ -30,7 +32,8 @@ class DataBaseManager():
             else:
                 print(err)
         self.logging_level = logging_level
-        self.query = ''
+        self.query = None
+        self.args = None
 
     def create_tables(self, tables):
         """
@@ -69,10 +72,11 @@ class DataBaseManager():
             else:
                 return
 
-    def insert_value(self, table, columns, values):
+    def insert_value(self, table, columns, values, ignore_duplicates=True):
         """
         Insert a row into the database.
         The method, to be versatile, needs to parse lists and tuples arguments into a query string.
+        :param ignore_duplicates:  bool
         :param table:  str, name of the table
         :param columns: tuple, tuple of strings corresponding to the columns to insert data in
         :param values: tuple, tuple of mixed types containing the values to add
@@ -92,9 +96,11 @@ class DataBaseManager():
         else:
             values_types = self.remove_chars_from_string(str(values_types), to_remove='\'')
         # execute MySql statement
-        self.cursor.execute(f'insert into {table} ' +
-                            str(columns) +
-                            f' values {values_types}', values)
+        self.query = f'insert ignore into {table} ' + str(columns) + f' values {values_types}'
+        if not ignore_duplicates:
+            self.query = self.remove_chars_from_string(self.query, 'ignore')
+
+        self.cursor.execute(self.query, values)
 
     def insert_values_from_file(self, table, filepath, primary_key):
         """
@@ -131,17 +137,23 @@ class DataBaseManager():
         self.cursor.execute(f"SHOW columns FROM {table}")
         return [column[0] for column in self.cursor.fetchall()]
 
-    def insert_values_from_dict(self, table, d):
+    def insert_values_from_dict(self, table, d, ignore_duplicates=True):
         """
         This method inserts values from the dictionary.
         The keys are the columns to insert and the values is the list of values to insert.
+        :param table: str
+        :param ignore_duplicates: bool
         :param d: dict
         """
-        columns = tuple(d.keys())
-        columns = self.remove_chars_from_string(str(columns), '\'')  # removing string apostrophe
-        if '(' not in columns:  # handles the case of single element
-            columns = '(' + columns + ')'
-        values = pd.DataFrame(d).values
+        columns = list(d.keys())
+        table_columns = self.get_columns_names(table)
+        columns_in_common = set(table_columns).intersection(set(columns))
+        values = pd.DataFrame(d)[list(columns_in_common)].values
+        print(columns_in_common)
+        if len(list(columns_in_common))==1:  # handles the case of single element
+            columns_in_common = self.remove_chars_from_string(str(tuple(columns_in_common)), ['\'', ','])
+        else:
+            columns_in_common = self.remove_chars_from_string(str(tuple(columns_in_common)), '\'')  # removing string apostrophe
         print([type(v) for v in values[0]])
         values_types = self.create_tuple_of_placeholders(values[0])
 
@@ -150,11 +162,11 @@ class DataBaseManager():
                 str(values_types), to_remove=[',', '\''])  # removing trailing comma
         else:
             values_types = self.remove_chars_from_string(str(values_types), to_remove='\'')
-
-        self.query = 'INSERT INTO ' + table + ' ' + str(columns)  + ' VALUES ' + values_types
+        self.query = 'INSERT ignore INTO ' + table + ' ' + str(columns_in_common) + ' VALUES ' + values_types
         print(self.query)
-        print([tuple(v) for v in pd.DataFrame(d).values])
-        self.cursor.executemany(self.query, [tuple(v) for v in pd.DataFrame(d).values])
+        if not ignore_duplicates:
+            self.query = self.remove_chars_from_string(self.query, 'ignore')
+        self.cursor.executemany(self.query, [tuple(v) for v in values])
 
     def select(self, columns):
         self.query = 'SELECT ' + self.remove_chars_from_string(str(columns), ['\'', '\"'])
@@ -166,7 +178,7 @@ class DataBaseManager():
 
     def where(self, condition, args):
         self.query = self.query + ' WHERE ' + self.remove_chars_from_string(str(condition), ['\'', '\"'])
-        self.args=args
+        self.args = args
         return self
 
     def run_query(self, verbose=True):
@@ -184,8 +196,8 @@ class DataBaseManager():
         :param values: list, list of objects.
         :return: tuple, containing the identifiers for each type to insert.
         """
-        # return tuple(type_dict[type(val)] for val in values)
         return tuple("%s" for val in values)
+        # return tuple("%s") * len(values)
 
     @staticmethod
     def remove_chars_from_string(s, to_remove):
@@ -195,15 +207,14 @@ class DataBaseManager():
             s = s.replace(character, '')
         return s
 
-    def input_check_for_values(self, values):
+    @staticmethod
+    def input_check_for_values(values):
         print(values)
         v2 = []
         for v in values:
             try:
                 v2.append(int(v))
-            except:
+            except ValueError:
                 v2.append(v)
         print([type(v) for v in v2])
         return v2
-
-
