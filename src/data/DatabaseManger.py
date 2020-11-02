@@ -2,15 +2,12 @@
 # @Author      : Jacopo Solari
 # @Email       : jaco.solari@gmail.com
 # @File        : DatabaseManger.py
-import datetime
 
 import mysql.connector
 from mysql.connector import errorcode
 from mysql.connector.errors import ProgrammingError
 import pandas as pd
 import os
-import numpy as np
-
 
 class DataBaseManager():
     """

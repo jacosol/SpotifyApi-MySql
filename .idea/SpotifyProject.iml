@@ -6,9 +6,16 @@
       <sourceFolder url="file://$MODULE_DIR$/src/data" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/data/scripts" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/scraping" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/resources" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PackageRequirementsSettings">
+    <option name="requirementsPath" value="" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="pytest" />
   </component>
 </module>
