@@ -41,7 +41,7 @@ db.cnx.commit()
 
 db.create_tables(TABLES)
 
-d = sp.get_newly_released_albums(max_number_of_albums=35, initial_offset=35, filename='../resources/data/trial.csv')
+d = sp.get_new_releases(max_number_of_albums=35, initial_offset=35, filename='../resources/data/trial.csv')
 print(d)
 db.insert_values_from_dict('Albums', d)
 db.cnx.commit()

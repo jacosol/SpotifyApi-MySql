@@ -28,31 +28,53 @@ class SpotifyAPI(object):
     def list_all_genres(self):
         pass
 
-    def get_newly_released_albums(self, max_number_of_albums=20000, limit=10, initial_offset=0, filename='../../resources/data/trial.csv'):
-        response = {'name':[], 'artist':[], 'artist_spotify_link':[], 'artist_spotify_id':[],
+    def get_new_releases(self, max_number_of_albums=20000, limit=10, initial_offset=0, filename='../../resources/data/trial.csv'):
+        response_albums = {'name':[], 'artist':[], 'artist_spotify_link':[], 'artist_spotify_id':[],
                     'release_date':[], 'album_id':[], 'album_type':[], 'total_tracks':[]}
+        response_artists = {'name': [], 'artist_id': [], 'type':[], 'followers':[], 'popularity':[], 'uri':[], 'album_id':[]}
         for offset in range(0, max_number_of_albums, limit):
             offset += initial_offset
             r = self.sp.search(q='tag:new', type='album', offset=offset, limit=limit)
             print(json.dumps(r, indent=1)) # prints nicely a dict
-            response['name'].extend([i['name'] for i in r['albums']['items']])
-            response['release_date'].extend([i['release_date'] for i in r['albums']['items']])
-            response['album_type'].extend([i['album_type'] for i in r['albums']['items']])
-            response['album_id'].extend([i['id'] for i in r['albums']['items']])
-            response['total_tracks'].extend([int(i['total_tracks']) for i in r['albums']['items']])
-            response['artist'].extend([[i['artists'][j]['name']
-                                        for j in range(len(i['artists']))] for i in r['albums']['items']])
-            response['artist_spotify_id'].extend([[i['artists'][j]['id'] for j in range(len(i['artists']))]
-                                                  for i in r['albums']['items']])
-            response['artist_spotify_link'].extend([[i['artists'][j]['href'] for j in range(len(i['artists']))]
-                                                    for i in r['albums']['items']])
+            response_albums = self.format_albums(r, response_albums)
+            response_artists = self.format_artists(r, response_artists)
 
-        self.save_response(response=response, filename=filename)
-        # print(json.dumps(response, indent=1)) # prints nicely a dict
-        return response
+
+        self.save_response(response=response_albums, filename=filename)
+        self.save_response(response=response_artists, filename='../resources/data/trial_artists.csv')
+        # print(json.dumps(response_albums, indent=1)) # prints nicely a dict
+        return response_albums
+
+    def format_artists(self, r, response_artists):
+        for i in r['albums']['items']:
+            artists = [self.sp.artist(a['id']) for a in i['artists']]
+            response_artists['name'].extend([artist['name'] for artist in artists])
+            response_artists['artist_id'].extend([artist['id'] for artist in artists])
+            response_artists['album_id'].extend([i['id'] for k in range(len(artists))])
+            response_artists['uri'].extend([artist['uri'] for artist in artists])
+            response_artists['popularity'].extend([artist['popularity'] for artist in artists])
+            response_artists['followers'].extend([artist['followers'] for artist in artists])
+            response_artists['type'].extend([artist['type'] for artist in artists])
+
+        return response_artists
+
+    @staticmethod
+    def format_albums(r, response_albums):
+        response_albums['name'].extend([i['name'] for i in r['albums']['items']])
+        response_albums['release_date'].extend([i['release_date'] for i in r['albums']['items']])
+        response_albums['album_type'].extend([i['album_type'] for i in r['albums']['items']])
+        response_albums['album_id'].extend([i['id'] for i in r['albums']['items']])
+        response_albums['total_tracks'].extend([int(i['total_tracks']) for i in r['albums']['items']])
+        response_albums['artist'].extend([[i['artists'][j]['name']
+                                           for j in range(len(i['artists']))] for i in r['albums']['items']])
+        response_albums['artist_spotify_id'].extend([[i['artists'][j]['id'] for j in range(len(i['artists']))]
+                                                     for i in r['albums']['items']])
+        response_albums['artist_spotify_link'].extend([[i['artists'][j]['href'] for j in range(len(i['artists']))]
+                                                       for i in r['albums']['items']])
+
+        return response_albums
 
     def get_tracks_from_album(self, album_id='6M4Nu5UgX097dxeF2lm9P8'):
-
         r = self.sp.album_tracks(album_id)
         i=0
 
