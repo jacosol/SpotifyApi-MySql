@@ -30,6 +30,8 @@ sp = SpotifyAPI(
 db = DataBaseManager(logging_level=1)
 #
 db.drop_table('Albums')
+db.drop_table('Artists')
+db.drop_table('Authorship')
 TABLES = {}
 TABLES['Albums'] = ('create table Albums '
                     '(album_id CHAR(22) PRIMARY KEY,'
@@ -37,13 +39,28 @@ TABLES['Albums'] = ('create table Albums '
                     'total_tracks INT,'
                     'album_type VARCHAR(10),'
                     'release_date DATE);')
-db.cnx.commit()
 
+TABLES['Artists'] = ('create table Artists '
+                     '(artist_id CHAR(22) PRIMARY KEY,'
+                     'name VARCHAR(200), '
+                     'type VARCHAR(10),'
+                     'popularity INT,'
+                     'uri VARCHAR(100),'
+                     'followers INT);')
+
+TABLES['Authorship'] = ('create table Authorship '
+                        '(artist_id CHAR(22),'
+                        'album_id CHAR(22));')
+
+
+db.cnx.commit()
 db.create_tables(TABLES)
 
-d = sp.get_new_releases(max_number_of_albums=35, initial_offset=35, filename='../resources/data/trial.csv')
-print(d)
-db.insert_values_from_dict('Albums', d)
+albums, artists, authors = sp.get_new_releases(max_number_of_albums=35, initial_offset=35, filename='../resources/data/trial.csv')
+# print(d)
+db.insert_values_from_dict('Albums', albums)
+db.insert_values_from_dict('Artists', artists)
+db.insert_values_from_dict('Authorship', authors)
 db.cnx.commit()
 #
 #
