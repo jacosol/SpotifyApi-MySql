@@ -43,6 +43,11 @@ class SpotifyAPI(object):
                     'release_date':[], 'album_id':[], 'album_type':[], 'total_tracks':[]}
         response_artists = {'name': [], 'artist_id': [], 'type':[], 'followers':[], 'popularity':[], 'uri':[]}
         response_authorship = {'artist_id': [], 'album_id':[]}
+        response_tracks = {'name':[], 'duration_ms':[], 'explicit':[], 'track_id':[], 'album_id':[], 'track_number':[], 'key':[],
+                           'mode':[], 'time_signature':[], 'acousticness':[], 'danceability':[], 'energy':[],
+                           'instrumentalness':[], 'liveness':[], 'loudness':[], 'speechiness':[], 'valence':[],
+                           'tempo':[]}
+
         for offset in range(0, max_number_of_albums, limit):
             offset += initial_offset
             r = self.sp.search(q='tag:new', type='album', offset=offset, limit=limit)
@@ -50,11 +55,12 @@ class SpotifyAPI(object):
             response_albums = self.format_albums(r, response_albums)
             response_artists = self.format_artists(r, response_artists)
             response_authorship = self.format_authorship(r, response_authorship)
-
+            response_tracks = self.format_tracks_from_albums(r, response_tracks)
+            aaa=0
         self.save_response(response=response_albums, filename=filename)
         self.save_response(response=response_artists, filename='../resources/data/trial_artists.csv')
         # print(json.dumps(response_albums, indent=1)) # prints nicely a dict
-        return response_albums, response_artists, response_authorship
+        return response_albums, response_artists, response_authorship, response_tracks
 
     def format_artists(self, r, response_artists):
         for i in r['albums']['items']:
@@ -90,10 +96,38 @@ class SpotifyAPI(object):
             for artist in artists:
                 response_authorship['album_id'].extend([i['id']])
                 response_authorship['artist_id'].extend([artist['id']])
-
-
         return response_authorship
 
+    def format_tracks_from_albums(self, r, response_tracks):
+        for i in r['albums']['items']:
+            tracks = self.sp.album_tracks(i['id'])
+            response_tracks = self.format_tracks(tracks, response_tracks, i['id'])
+        return response_tracks
+
+    def format_tracks(self, tracks, response_tracks, album_id=None):
+        track_ids = [track['id'] for track in tracks['items']]
+        response_tracks['name'].extend([track['name'] for track in tracks['items']])
+        response_tracks['duration_ms'].extend([track['duration_ms'] for track in tracks['items']])
+        response_tracks['explicit'].extend([track['explicit'] for track in tracks['items']])
+        response_tracks['track_id'].extend(track_ids)
+        response_tracks['track_number'].extend([track['track_number'] for track in tracks['items']])
+        response_tracks['album_id'].extend([album_id for track in tracks['items']])
+        # audio features
+        audio_features = self.sp.audio_features(track_ids)
+        response_tracks['key'].extend([track_feature['key'] for track_feature in audio_features])
+        response_tracks['mode'].extend([track_feature['mode'] for track_feature in audio_features])
+        response_tracks['time_signature'].extend([track_feature['time_signature'] for track_feature in audio_features])
+        response_tracks['acousticness'].extend([track_feature['acousticness'] for track_feature in audio_features])
+        response_tracks['danceability'].extend([track_feature['danceability'] for track_feature in audio_features])
+        response_tracks['energy'].extend([track_feature['energy'] for track_feature in audio_features])
+        response_tracks['instrumentalness'].extend([track_feature['instrumentalness'] for track_feature in audio_features])
+        response_tracks['liveness'].extend([track_feature['liveness'] for track_feature in audio_features])
+        response_tracks['loudness'].extend([track_feature['loudness'] for track_feature in audio_features])
+        response_tracks['speechiness'].extend([track_feature['speechiness'] for track_feature in audio_features])
+        response_tracks['valence'].extend([track_feature['valence'] for track_feature in audio_features])
+        response_tracks['tempo'].extend([track_feature['tempo'] for track_feature in audio_features])
+
+        return response_tracks
 
     def get_tracks_from_album(self, album_id='6M4Nu5UgX097dxeF2lm9P8'):
         r = self.sp.album_tracks(album_id)

@@ -32,6 +32,7 @@ db = DataBaseManager(logging_level=1)
 db.drop_table('Albums')
 db.drop_table('Artists')
 db.drop_table('Authorship')
+db.drop_table('Tracks')
 TABLES = {}
 TABLES['Albums'] = ('create table Albums '
                     '(album_id CHAR(22) PRIMARY KEY,'
@@ -47,26 +48,41 @@ TABLES['Artists'] = ('create table Artists '
                      'popularity INT,'
                      'uri VARCHAR(100),'
                      'followers INT);')
+TABLES['Tracks'] = ('create table Tracks '
+                    '(track_id CHAR(22) PRIMARY KEY,'
+                    'name VARCHAR(200),'
+                    'duration_ms INT,'
+                    'tempo FLOAT,'
+                    'album_id CHAR(22),'
+                    'explicit VARCHAR(10),'
+                    'song_key INT,'
+                    'mode INT,'
+                    'time_signature INT,'
+                    'acousticness FLOAT,'
+                    'danceability FLOAT,'
+                    'energy FLOAT,'
+                    'instrumentalness FLOAT,'
+                    'speechiness FLOAT,'
+                    'valence FLOAT,'
+                    'track_number INT);')
 
 TABLES['Authorship'] = ('create table Authorship '
                         '(artist_id CHAR(22),'
                         'album_id CHAR(22));')
 
-
 db.cnx.commit()
 db.create_tables(TABLES)
 
-albums, artists, authors = sp.get_new_releases(max_number_of_albums=35, initial_offset=35, filename='../resources/data/trial.csv')
-# print(d)
+albums, artists, authors, tracks = sp.get_new_releases(max_number_of_albums=35, initial_offset=35,
+                                                       filename='../resources/data/trial.csv')
 db.insert_values_from_dict('Albums', albums)
 db.insert_values_from_dict('Artists', artists)
 db.insert_values_from_dict('Authorship', authors)
+db.insert_values_from_dict('Tracks', tracks)
 db.cnx.commit()
-#
-#
+
 do = 0
 if do:
-
     # db.select('*') \
     #     .fromm('Albums') \
     #     .where(condition='release_date = %s', args=(datetime.date(2020,10,22),)) \
