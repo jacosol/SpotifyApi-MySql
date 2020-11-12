@@ -56,7 +56,7 @@ class SpotifyAPI(object):
             response_artists = self.format_artists(r, response_artists)
             response_authorship = self.format_authorship(r, response_authorship)
             response_tracks = self.format_tracks_from_albums(r, response_tracks)
-            aaa=0
+
         self.save_response(response=response_albums, filename=filename)
         self.save_response(response=response_artists, filename='../resources/data/trial_artists.csv')
         # print(json.dumps(response_albums, indent=1)) # prints nicely a dict
@@ -100,7 +100,7 @@ class SpotifyAPI(object):
 
     def format_tracks_from_albums(self, r, response_tracks):
         for i in r['albums']['items']:
-            tracks = self.sp.album_tracks(i['id'])
+            tracks = self.get_tracks_from_album(album_id=i['id'])
             response_tracks = self.format_tracks(tracks, response_tracks, i['id'])
         return response_tracks
 
@@ -131,7 +131,7 @@ class SpotifyAPI(object):
 
     def get_tracks_from_album(self, album_id='6M4Nu5UgX097dxeF2lm9P8'):
         r = self.sp.album_tracks(album_id)
-        i=0
+        return r
 
 
     def save_response(self, response, filename):
