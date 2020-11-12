@@ -62,6 +62,20 @@ class SpotifyAPI(object):
         # print(json.dumps(response_albums, indent=1)) # prints nicely a dict
         return response_albums, response_artists, response_authorship, response_tracks
 
+    def get_data_over_time_period(self, type, start_year, end_year=None, max_number_of_albums=20000, limit=10,
+                                  initial_offset=0):
+        """
+        This method returns albums, artists and tracks dicts released over a time period in years.
+        :param initial_offset:
+        :param max_number_of_albums:
+        :param limit:
+        :param type: 
+        :param start_year:
+        :param end_year:
+        :return:
+        """
+        pass
+
     def format_artists(self, r, response_artists):
         for i in r['albums']['items']:
             artists = [self.sp.artist(a['id']) for a in i['artists']]
