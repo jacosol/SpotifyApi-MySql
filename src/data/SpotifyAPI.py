@@ -96,7 +96,13 @@ class SpotifyAPI(object):
             for offset in range(0, max_number_of_albums, limit):
                 print(f'\rretrieved {offset} albums', end='')
                 offset += initial_offset
-                r = self.sp.search(q='year:' + str(year), type='album', offset=offset, limit=limit)
+                try:
+                    # TODO add each different wildcard from a series of wildcards saved on an external file.
+                    r = self.sp.search(q=' year:' + str(year), type='album', offset=offset, limit=limit)
+                except spotipy.exceptions.SpotifyException as e:
+                    print(e)
+                    print('Probably end of the catalogue reached....')
+                    break
                 # print(json.dumps(r, indent=1)) # prints nicely a dict
                 response_albums = self.format_albums(r, response_albums)
                 response_artists = self.format_artists(r, response_artists)
