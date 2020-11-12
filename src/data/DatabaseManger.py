@@ -119,7 +119,8 @@ class DataBaseManager():
         file_columns = df.columns
         columns = self.get_columns_names(table)
         columns_in_common = set(columns).intersection(set(file_columns))
-        print(f'Adding values from {filepath.split(os.sep)[-1]} from these columns: \n   {columns_in_common}')
+        if self.logging_level > 0:
+            print(f'Adding values from {filepath.split(os.sep)[-1]} from these columns: \n   {columns_in_common}')
         df = df[columns_in_common]
         for i in range(len(df)):
             values = list(df.loc[i].values)
@@ -149,21 +150,21 @@ class DataBaseManager():
         table_columns = self.get_columns_names(table)
         columns_in_common = set(table_columns).intersection(set(columns))
         values = pd.DataFrame(d)[list(columns_in_common)].values
-        print(columns_in_common)
+        if self.logging_level > 0:
+            print(f'columns in common between table {table} and dictionary to insert : {columns_in_common}')
         if len(list(columns_in_common))==1:  # handles the case of single element
             columns_in_common = self.remove_chars_from_string(str(tuple(columns_in_common)), ['\'', ','])
         else:
             columns_in_common = self.remove_chars_from_string(str(tuple(columns_in_common)), '\'')  # removing string apostrophe
-        print([type(v) for v in values[0]])
         values_types = self.create_tuple_of_placeholders(values[0])
-
         if len(values_types) == 1:
             values_types = self.remove_chars_from_string(
                 str(values_types), to_remove=[',', '\''])  # removing trailing comma
         else:
             values_types = self.remove_chars_from_string(str(values_types), to_remove='\'')
         self.query = 'INSERT ignore INTO ' + table + ' ' + str(columns_in_common) + ' VALUES ' + values_types
-        print(self.query)
+        if self.logging_level > 0:
+            print(self.query)
         if not ignore_duplicates:
             self.query = self.remove_chars_from_string(self.query, 'ignore')
         self.cursor.executemany(self.query, [tuple(v) for v in values])
@@ -183,7 +184,8 @@ class DataBaseManager():
 
     def run_query(self, verbose=True):
         self.query = self.query + ';'
-        print(self.query)
+        if self.logging_level > 0:
+            print(self.query)
         self.cursor.execute(self.query, self.args)
         if verbose:
             for col in self.cursor:
@@ -207,14 +209,13 @@ class DataBaseManager():
             s = s.replace(character, '')
         return s
 
-    @staticmethod
-    def input_check_for_values(values):
-        print(values)
+    def input_check_for_values(self, values):
+        if self.logging_level > 0:
+            print(values)
         v2 = []
         for v in values:
             try:
                 v2.append(int(v))
             except ValueError:
                 v2.append(v)
-        print([type(v) for v in v2])
         return v2

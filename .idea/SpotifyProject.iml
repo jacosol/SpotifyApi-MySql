@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/data/scripts" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/scraping" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/plotting" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/resources" />
     </content>
     <orderEntry type="inheritedJdk" />
