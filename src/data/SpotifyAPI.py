@@ -60,7 +60,7 @@ class SpotifyAPI(object):
 
         return response_albums, response_artists, response_authorship, response_tracks
 
-    def get_data_over_time_period(self, start_year, end_year=None, max_number_of_albums=100000, limit=10,
+    def get_data_over_time_period(self, start_year, wildcards, end_year=None, max_number_of_albums=100000, limit=10,
                                   initial_offset=0, add_inline=True):
         """
         This method returns albums, artists and tracks dicts released over a time period in years.
@@ -91,38 +91,42 @@ class SpotifyAPI(object):
         else:
             time_span = range(start_year, end_year + 1, 1)
         for year in time_span:
-            print()
-            print(f'now retrieving for {year}')
-            for offset in range(0, max_number_of_albums, limit):
-                print(f'\rretrieved {offset} albums', end='')
-                offset += initial_offset
-                try:
-                    # TODO add each different wildcard from a series of wildcards saved on an external file.
-                    r = self.sp.search(q=' year:' + str(year), type='album', offset=offset, limit=limit)
-                except spotipy.exceptions.SpotifyException as e:
-                    print(e)
-                    print('Probably end of the catalogue reached....')
-                    break
-                # print(json.dumps(r, indent=1)) # prints nicely a dict
-                response_albums = self.format_albums(r, response_albums)
-                response_artists = self.format_artists(r, response_artists)
-                response_authorship = self.format_authorship(r, response_authorship)
-                response_tracks = self.format_tracks_from_albums(r, response_tracks)
-                if add_inline:
-                    self.db.insert_values_from_dict('Albums', response_albums)
-                    self.db.insert_values_from_dict('Artists', response_artists)
-                    self.db.insert_values_from_dict('Authorship', response_authorship)
-                    self.db.insert_values_from_dict('Tracks', response_tracks)
-                    self.db.cnx.commit()
-                    del response_albums, response_artists, response_tracks, response_authorship
-                    response_albums = {'name':[], 'artist':[], 'artist_spotify_link':[], 'artist_spotify_id':[],
-                                       'release_date':[], 'album_id':[], 'album_type':[], 'total_tracks':[]}
-                    response_artists = {'name': [], 'artist_id': [], 'type':[], 'followers':[], 'popularity':[], 'uri':[]}
-                    response_authorship = {'artist_id': [], 'album_id':[]}
-                    response_tracks = {'name':[], 'duration_ms':[], 'explicit':[], 'track_id':[], 'album_id':[], 'track_number':[], 'key':[],
-                                       'mode':[], 'time_signature':[], 'acousticness':[], 'danceability':[], 'energy':[],
-                                       'instrumentalness':[], 'liveness':[], 'loudness':[], 'speechiness':[], 'valence':[],
-                                       'tempo':[]}
+            for wildcard in wildcards:
+                print()
+                print(f'now retrieving for {year} with wildcard {wildcard}')
+                for offset in range(0, max_number_of_albums, limit):
+                    print(f'\rretrieved {offset} albums', end='')
+                    offset += initial_offset
+                    try:
+                        # TODO add each different wildcard from a series of wildcards saved on an external file.
+                        r = self.sp.search(q=wildcard + ' and year:' + str(year), type='album', offset=offset, limit=limit)
+                    except spotipy.exceptions.SpotifyException as e:
+                        print(e)
+                        print('Probably end of the catalogue reached....')
+                        break
+                    # print(json.dumps(r, indent=1)) # prints nicely a dict
+                    response_albums = self.format_albums(r, response_albums)
+                    response_artists = self.format_artists(r, response_artists)
+                    response_authorship = self.format_authorship(r, response_authorship)
+                    response_tracks = self.format_tracks_from_albums(r, response_tracks)
+                    if add_inline:
+                        try:
+                            self.db.insert_values_from_dict('Albums', response_albums)
+                            self.db.insert_values_from_dict('Artists', response_artists)
+                            self.db.insert_values_from_dict('Authorship', response_authorship)
+                            self.db.insert_values_from_dict('Tracks', response_tracks)
+                        except IndexError:
+                            print('No more albums to retrieve, moving to next task \n')
+                        self.db.cnx.commit()
+                        del response_albums, response_artists, response_tracks, response_authorship
+                        response_albums = {'name':[], 'artist':[], 'artist_spotify_link':[], 'artist_spotify_id':[],
+                                           'release_date':[], 'album_id':[], 'album_type':[], 'total_tracks':[]}
+                        response_artists = {'name': [], 'artist_id': [], 'type':[], 'followers':[], 'popularity':[], 'uri':[]}
+                        response_authorship = {'artist_id': [], 'album_id':[]}
+                        response_tracks = {'name':[], 'duration_ms':[], 'explicit':[], 'track_id':[], 'album_id':[], 'track_number':[], 'key':[],
+                                           'mode':[], 'time_signature':[], 'acousticness':[], 'danceability':[], 'energy':[],
+                                           'instrumentalness':[], 'liveness':[], 'loudness':[], 'speechiness':[], 'valence':[],
+                                           'tempo':[]}
         return response_albums, response_artists, response_authorship, response_tracks
 
 
@@ -145,7 +149,8 @@ class SpotifyAPI(object):
         formatted_release_dates = [i['release_date'] if '-' in i['release_date'] else i['release_date'] + '-01-01'
                                    for i in r['albums']['items']]
         response_albums['release_date'].extend(formatted_release_dates)
-        print(formatted_release_dates)
+        print()
+        print('release dates: ', formatted_release_dates)
         response_albums['album_type'].extend([i['album_type'] for i in r['albums']['items']])
         response_albums['total_tracks'].extend([int(i['total_tracks']) for i in r['albums']['items']])
         response_albums['artist'].extend([[i['artists'][j]['name']

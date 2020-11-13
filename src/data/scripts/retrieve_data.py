@@ -8,6 +8,14 @@ This script will create the needed object to fill the database with data
 """
 from SpotifyAPI import SpotifyAPI
 
+def load_wildcards(my_file):
+    my_file = open(my_file, "r")
+    content = my_file.read()
+    content_list = content.split(",")
+    my_file.close()
+    print(content_list)
+    return content_list
+
 start_year = 1999
 end_year = 2020
 
@@ -59,9 +67,11 @@ TABLES['Authorship'] = ('create table Authorship '
 sp.db.cnx.commit()
 sp.db.create_tables(TABLES)
 
+wildcards = load_wildcards('../../resources/wildcards.txt')
 albums, artists, authors, tracks = sp.get_data_over_time_period(start_year=start_year, end_year=end_year,
-                                                                max_number_of_albums=20,#int(1e10),
-                                                                initial_offset=0, add_inline=True)
+                                                                max_number_of_albums=2000,#int(1e10),
+                                                                initial_offset=0, add_inline=True,
+                                                                wildcards=wildcards)
 sp.db.cnx.commit()
 
 
