@@ -1,0 +1,63 @@
+Traceback (most recent call last):
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/connectionpool.py", line 445, in _make_request
+    six.raise_from(e, None)
+  File "<string>", line 3, in raise_from
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/connectionpool.py", line 440, in _make_request
+    httplib_response = conn.getresponse()
+  File "/usr/local/Cellar/python/3.7.1/Frameworks/Python.framework/Versions/3.7/lib/python3.7/http/client.py", line 1321, in getresponse
+    response.begin()
+  File "/usr/local/Cellar/python/3.7.1/Frameworks/Python.framework/Versions/3.7/lib/python3.7/http/client.py", line 296, in begin
+    version, status, reason = self._read_status()
+  File "/usr/local/Cellar/python/3.7.1/Frameworks/Python.framework/Versions/3.7/lib/python3.7/http/client.py", line 257, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+  File "/usr/local/Cellar/python/3.7.1/Frameworks/Python.framework/Versions/3.7/lib/python3.7/socket.py", line 589, in readinto
+    return self._sock.recv_into(b)
+  File "/usr/local/Cellar/python/3.7.1/Frameworks/Python.framework/Versions/3.7/lib/python3.7/ssl.py", line 1052, in recv_into
+    return self.read(nbytes, buffer)
+  File "/usr/local/Cellar/python/3.7.1/Frameworks/Python.framework/Versions/3.7/lib/python3.7/ssl.py", line 911, in read
+    return self._sslobj.read(len, buffer)
+socket.timeout: The read operation timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/requests/adapters.py", line 449, in send
+    timeout=timeout
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/connectionpool.py", line 756, in urlopen
+    method, url, error=e, _pool=self, _stacktrace=sys.exc_info()[2]
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/util/retry.py", line 531, in increment
+    raise six.reraise(type(error), error, _stacktrace)
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/packages/six.py", line 735, in reraise
+    raise value
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/connectionpool.py", line 706, in urlopen
+    chunked=chunked,
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/connectionpool.py", line 447, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/urllib3/connectionpool.py", line 337, in _raise_timeout
+    self, url, "Read timed out. (read timeout=%s)" % timeout_value
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.spotify.com', port=443): Read timed out. (read timeout=5)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/Copo1/Documents/PYTHON_code/PyCharm/SpotifyProject/src/data/scripts/retrieve_data.py", line 74, in <module>
+    wildcards=wildcards)
+  File "/Users/Copo1/Documents/PYTHON_code/PyCharm/SpotifyProject/src/data/SpotifyAPI.py", line 111, in get_data_over_time_period
+    response_tracks = self.format_tracks_from_albums(r, response_tracks)
+  File "/Users/Copo1/Documents/PYTHON_code/PyCharm/SpotifyProject/src/data/SpotifyAPI.py", line 175, in format_tracks_from_albums
+    tracks = self.get_tracks_from_album(album_id=i['id'])
+  File "/Users/Copo1/Documents/PYTHON_code/PyCharm/SpotifyProject/src/data/SpotifyAPI.py", line 213, in get_tracks_from_album
+    r = self.sp.album_tracks(album_id)
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/spotipy/client.py", line 439, in album_tracks
+    "albums/" + trid + "/tracks/", limit=limit, offset=offset, market=market
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/spotipy/client.py", line 291, in _get
+    return self._internal_call("GET", url, payload, kwargs)
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/spotipy/client.py", line 242, in _internal_call
+    timeout=self.requests_timeout, **args
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/requests/sessions.py", line 542, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/requests/sessions.py", line 655, in send
+    r = adapter.send(request, **kwargs)
+  File "/Users/Copo1/.local/share/virtualenvs/SpotifyProject-_hu4JOOX/lib/python3.7/site-packages/requests/adapters.py", line 529, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.spotify.com', port=443): Read timed out. (read timeout=5)

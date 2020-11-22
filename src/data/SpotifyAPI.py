@@ -6,9 +6,10 @@
 import os
 import spotipy
 import json
-import pandas as pd
+import requests
 from spotipy.oauth2 import SpotifyClientCredentials
 import mysql
+import time
 
 from DatabaseManger import DataBaseManager
 
@@ -61,7 +62,7 @@ class SpotifyAPI(object):
         return response_albums, response_artists, response_authorship, response_tracks
 
     def get_data_over_time_period(self, start_year, wildcards, end_year=None, max_number_of_albums=100000, limit=10,
-                                  initial_offset=0, add_inline=True):
+                                  initial_offset=0, add_inline=True, resume=None):
         """
         This method returns albums, artists and tracks dicts released over a time period in years.
         :param initial_offset:
@@ -91,7 +92,12 @@ class SpotifyAPI(object):
         else:
             time_span = range(start_year, end_year + 1, 1)
         for year in time_span:
-            for wildcard in wildcards:
+            # handle the resume case
+            if resume and year==resume['year']:
+                wildcards_actual = resume['wildcards_truncated']
+            else:
+                wildcards_actual = wildcards
+            for wildcard in wildcards_actual:
                 print()
                 print(f'now retrieving for {year} with wildcard {wildcard}')
                 for offset in range(0, max_number_of_albums, limit):
@@ -104,7 +110,14 @@ class SpotifyAPI(object):
                         print(e)
                         print('Probably end of the catalogue reached....')
                         break
-                    # print(json.dumps(r, indent=1)) # prints nicely a dict
+                    except requests.exceptions.ReadTimeout as e:
+                        print(e)
+                        print('#'*50)
+                        print('Timeout occurred, retrying in 2 minutes')
+                        time.sleep(60)
+                        r = self.sp.search(q=wildcard + ' and year:' + str(year), type='album', offset=offset, limit=limit)
+                        print('#'*50)
+                # print(json.dumps(r, indent=1)) # prints nicely a dict
                     response_albums = self.format_albums(r, response_albums)
                     response_artists = self.format_artists(r, response_artists)
                     response_authorship = self.format_authorship(r, response_authorship)
@@ -515,7 +528,7 @@ class DataBaseManager():
         columns = list(d.keys())
         table_columns = self.get_columns_names(table)
         columns_in_common = set(table_columns).intersection(set(columns))
-        values = pd.DataFrame(d)[list(columns_in_common)].values
+        values = pd.DataFrame(d).fillna(0)[list(columns_in_common)].values
         if self.logging_level > 0:
             print(f'columns in common between table {table} and dictionary to insert : {columns_in_common}')
         if len(list(columns_in_common))==1:  # handles the case of single element
